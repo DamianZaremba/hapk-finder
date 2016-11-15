@@ -36,12 +36,14 @@ def get_slots(calendar_ids, consult_blocks, date, before_h, after_h):
     if data['result']:
         for slot in data['slots']:
             hour = int('%s%s' % (slot['hour'], slot['minute']))
-            if (
-                    (not before_h or hour < before_h)
-                    and
-                    (not after_h or hour > after_h)
-            ):
-                slots.append('%s %s:%s' % (date, slot['hour'], slot['minute']))
+
+            if (before_h and hour > before_h) and not (after_h and hour > after_h):
+                continue
+
+            if (after_h and hour < after_h) and not (before_h and hour < before_h):
+                continue
+
+            slots.append('%s %s:%s' % (date, slot['hour'], slot['minute']))
     return slots
 
 
@@ -59,7 +61,7 @@ def find_next(practice_name, days, before_h, after_h):
 
     print('Appointments:')
     for x in range(0, days):
-        date = (datetime.today() + timedelta(days=x+1)).strftime('%Y-%m-%d')
+        date = (datetime.today() + timedelta(days=x + 1)).strftime('%Y-%m-%d')
 
         print('%s:' % date)
         entries = {}
