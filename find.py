@@ -79,7 +79,7 @@ if __name__ == '__main__':
                         action='store',
                         default='City Centre, Westermarkt 2. 1016 DK')
     parser.add_argument('--list-practices', action='store_true')
-    parser.add_argument('--days', '-d', action='store', default=3)
+    parser.add_argument('--days', '-d', action='store', default=3, type=int)
     args = parser.parse_args()
 
     if args.list_practices:
