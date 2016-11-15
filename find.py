@@ -24,7 +24,7 @@ def get_practices():
     return practices
 
 
-def get_slots(calendar_ids, consult_blocks, date):
+def get_slots(calendar_ids, consult_blocks, date, before_h, after_h):
     slots = []
     r = requests.post('http://hapk.digitaal-inschrijven.com/scripts/getPeriods.php',
                       {
@@ -35,7 +35,13 @@ def get_slots(calendar_ids, consult_blocks, date):
     data = r.json()
     if data['result']:
         for slot in data['slots']:
-            slots.append('%s %s:%s' % (date, slot['hour'], slot['minute']))
+            hour = int('%s%s' % (slot['hour'], slot['minute']))
+            if (
+                    (not before_h or hour < before_h)
+                    and
+                    (not after_h or hour > after_h)
+            ):
+                slots.append('%s %s:%s' % (date, slot['hour'], slot['minute']))
     return slots
 
 
@@ -45,20 +51,20 @@ def list_practices():
         print('* %s' % name)
 
 
-def find_next(practice_name, days):
+def find_next(practice_name, days, before_h, after_h):
     p = get_practices().get(practice_name, None)
     if not p:
         print('Could not find practice')
         return False
 
     print('Appointments:')
-    for x in range(1, days):
-        date = (datetime.today() + timedelta(days=x)).strftime('%Y-%m-%d')
+    for x in range(0, days):
+        date = (datetime.today() + timedelta(days=x+1)).strftime('%Y-%m-%d')
 
         print('%s:' % date)
         entries = {}
         for name, eids in get_people(p['id']).items():
-            for slot in get_slots(eids, p['external'], date):
+            for slot in get_slots(eids, p['external'], date, before_h, after_h):
                 if slot not in entries:
                     entries[slot] = []
                 entries[slot].append(name)
@@ -80,9 +86,11 @@ if __name__ == '__main__':
                         default='City Centre, Westermarkt 2. 1016 DK')
     parser.add_argument('--list-practices', action='store_true')
     parser.add_argument('--days', '-d', action='store', default=3, type=int)
+    parser.add_argument('--before', '-b', action='store', type=int)
+    parser.add_argument('--after', '-a', action='store', type=int)
     args = parser.parse_args()
 
     if args.list_practices:
         list_practices()
     else:
-        find_next(args.practice, args.days)
+        find_next(args.practice, args.days, args.before, args.after)
